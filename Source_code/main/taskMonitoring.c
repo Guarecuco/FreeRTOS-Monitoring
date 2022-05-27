@@ -3,8 +3,15 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+
+
 #include "esp_err.h"
 #include "taskMonitoring.h"
+#include "cses_udp.h"
+
+#define HOSTNAME "ESP32_1"
+#define TASK "CPU"
+
 
 /**
  * @brief   Function to print the CPU usage of tasks over a given duration.
@@ -35,6 +42,8 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
     UBaseType_t start_array_size, end_array_size;
     uint32_t start_run_time, end_run_time;
     esp_err_t ret;
+    char syslog_msg[256];
+    int priority;
 
     //Allocate array to store current task states
     start_array_size = uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET;
@@ -73,7 +82,6 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
         goto exit;
     }
 
-    printf("| Task | Run Time | Percentage\n");
     //Match each task in start_array to those in the end_array
     for (int i = 0; i < start_array_size; i++) {
         int k = -1;
@@ -89,20 +97,30 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
         //Check if matching task found
         if (k >= 0) {
             uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
-            uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);
-            printf("| %s | %d | %d%%\n", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
+            uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);            
+
+            //Send warning to syslog server
+            if ( percentage_time > 40){
+                priority = FACILITY_CODE*8 + Warning;
+                sprintf(syslog_msg, "<%d>1 - %s %s - - - Task: %s used %d%% over the last %d ms", priority, HOSTNAME, TASK, start_array[i].pcTaskName, percentage_time, STATS_MS_SECONDS);
+                udp_send_msg(syslog_msg);
+            }
         }
     }
 
     //Print unmatched tasks
     for (int i = 0; i < start_array_size; i++) {
         if (start_array[i].xHandle != NULL) {
-            printf("| %s | Deleted\n", start_array[i].pcTaskName);
+            priority = FACILITY_CODE*8 + Warning;
+            sprintf(syslog_msg, "<%d>1 - %s %s - - - Task: %s was deleted", priority, HOSTNAME, TASK, start_array[i].pcTaskName);
+            udp_send_msg(syslog_msg);
         }
     }
     for (int i = 0; i < end_array_size; i++) {
         if (end_array[i].xHandle != NULL) {
-            printf("| %s | Created\n", end_array[i].pcTaskName);
+            priority = FACILITY_CODE*8 + Warning;
+            sprintf(syslog_msg, "<%d>1 - %s %s - - - Task: %s was created", priority, HOSTNAME, TASK, end_array[i].pcTaskName);
+            udp_send_msg(syslog_msg);
         }
     }
     ret = ESP_OK;
@@ -119,7 +137,6 @@ static void stats_task(void *arg)
 
     //Print real time stats periodically
     while (1) {
-        printf("\n\nGetting real time stats over %d ms (%d ticks)\n", STATS_MS_SECONDS, STATS_TICKS);
         if (print_real_time_stats(STATS_TICKS) == ESP_OK) {
             printf("Real time stats obtained\n");
         } else {
@@ -130,7 +147,8 @@ static void stats_task(void *arg)
 }
 
 
-void startMonitoring(void)
+void setup_cpu_monitoring(void)
 {
     xTaskCreatePinnedToCore(stats_task, "stats", 4096, NULL, STATS_TASK_PRIO, NULL, 1);
+
 }

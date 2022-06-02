@@ -10,23 +10,14 @@
 #include "sdkconfig.h"
 
 #include "cses_hw_monitor.h"
-#include "cses_udp.h"
+#include "udp_logging.h"
 
 static const char *TAG = "cses_hw_monitor";
 
 static esp_err_t chip_info(void){
-    char syslog_msg[256];
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
 
-    //Send syslog message
-    sprintf(syslog_msg, "<%d>1 - %s %s - - - This is a %s chip with %d CPU core(s), WiFi%s%s, Silicon revision %d",
-     FACILITY_CODE*8 + Info, CSES_HOSTNAME, TAG, CONFIG_IDF_TARGET,
-            chip_info.cores,
-            (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
-            (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "", chip_info.revision);
-    udp_send_msg(syslog_msg);
-    //Print same message to console
     ESP_LOGI(TAG,"This is a %s chip with %d CPU core(s), WiFi%s%s, Silicon revision %d ",
             CONFIG_IDF_TARGET,
             chip_info.cores,
@@ -34,20 +25,10 @@ static esp_err_t chip_info(void){
             (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "", chip_info.revision);
 
     int flash_size = spi_flash_get_chip_size() / (1024 * 1024);
-    //Send syslog message
-    sprintf(syslog_msg, "<%d>1 - %s %s - - - Flash size: %d MB %s",
-    FACILITY_CODE*8 + Info, CSES_HOSTNAME, TAG, flash_size,
-     (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
-    udp_send_msg(syslog_msg);
-    //Print same message to console
     ESP_LOGI(TAG, "Flash size: %d MB %s", flash_size, (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
     
     int free_heap = xPortGetFreeHeapSize();
     int free_heap_ever = xPortGetMinimumEverFreeHeapSize();
-    //Send syslog
-    sprintf(syslog_msg, "<%d>1 - %s %s - - - Free heap size: %d bytes, Minimun heap size ever: %d bytes",
-    FACILITY_CODE*8 + Info, CSES_HOSTNAME, TAG, free_heap, free_heap_ever);
-    udp_send_msg(syslog_msg);
     //Print same message to console
     ESP_LOGI(TAG, "Free heap size: %d bytes", free_heap);
     ESP_LOGI(TAG, "Minimun heap size ever: %d bytes", free_heap_ever);
@@ -63,13 +44,9 @@ static esp_err_t cpu_stats(TickType_t xTicksToWait)
     UBaseType_t numberTasks, start_array_size, end_array_size;
     uint32_t start_run_time, end_run_time;
     esp_err_t ret;
-    char syslog_msg[256];
-    int priority;
 
     //Gets the number of tasks
     numberTasks = uxTaskGetNumberOfTasks();
-    sprintf(syslog_msg, "<%d>1 - %s %s - - - Running tasks: %d", FACILITY_CODE*8 + Info, CSES_HOSTNAME, TAG, numberTasks);
-    udp_send_msg(syslog_msg);
     ESP_LOGI(TAG,"Running tasks: %d", numberTasks);
         
     //Allocate array to store current task states
@@ -128,9 +105,6 @@ static esp_err_t cpu_stats(TickType_t xTicksToWait)
 
             //Send warning to syslog server if CPU usage > CPU_THRESHOLD
             if ( percentage_time > CPU_THRESHOLD){
-                priority = FACILITY_CODE*8 + Warning;
-                sprintf(syslog_msg, "<%d>1 - %s %s - - - Task: %s used %d%% over the last %d ms", priority, CSES_HOSTNAME, TAG, start_array[i].pcTaskName, percentage_time, CSES_STATS_MS_SECONDS);
-                udp_send_msg(syslog_msg);
                 ESP_LOGW(TAG, "Task: %s used %d%% over the last %d ms", start_array[i].pcTaskName, percentage_time, CSES_STATS_MS_SECONDS);
             }
         }
@@ -139,17 +113,12 @@ static esp_err_t cpu_stats(TickType_t xTicksToWait)
     //Print unmatched tasks
     for (int i = 0; i < start_array_size; i++) {
         if (start_array[i].xHandle != NULL) {
-            priority = FACILITY_CODE*8 + Warning;
-            sprintf(syslog_msg, "<%d>1 - %s %s - - - Task: %s was deleted", priority, CSES_HOSTNAME, TAG, start_array[i].pcTaskName);
-            udp_send_msg(syslog_msg);
             ESP_LOGW(TAG, "Task: %s was deleted", start_array[i].pcTaskName);
         }
     }
     for (int i = 0; i < end_array_size; i++) {
         if (end_array[i].xHandle != NULL) {
-            priority = FACILITY_CODE*8 + Warning;
-            sprintf(syslog_msg, "<%d>1 - %s %s - - - Task: %s was created", priority, CSES_HOSTNAME, TAG, end_array[i].pcTaskName);
-            udp_send_msg(syslog_msg);
+            ESP_LOGW(TAG, "Task: %s was created", end_array[i].pcTaskName);
         }
     }
     ret = ESP_OK;
@@ -181,5 +150,6 @@ static void stats_task(void *arg)
 void setup_cpu_monitoring(void)
 {
     xTaskCreatePinnedToCore(stats_task, "hw_monitor", 4096, NULL, CSES_STATS_TASK_PRIO, NULL, 1);
+    udp_logging_init(TARGET_IP, TARGET_PORT, udp_logging_vprintf );
 
 }

@@ -9,6 +9,9 @@
 
 #define CSES_HOSTNAME "ESP32_1"
 
+#define TARGET_IP       "192.168.178.62"
+#define TARGET_PORT     443
+
 void setup_cpu_monitoring(void);
 
 #endif

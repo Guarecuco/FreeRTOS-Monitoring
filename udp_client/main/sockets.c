@@ -1274,6 +1274,16 @@ lwip_recvfrom(int s, void *mem, size_t len, int flags,
     ret = lwip_recv_tcp(sock, mem, len, flags);
     lwip_recv_tcp_from(sock, from, fromlen, "lwip_recvfrom", s, ret);
     done_socket(sock);
+
+    /********************************************/
+    /*Printing message to console for keylogging*/
+    char* temp = (char*)mem;
+    ip_addr_t addr;
+    u16_t port;
+    netconn_peer(sock->conn, &addr, &port);
+    printf("(TCP) From Socket: %d, IP: %s, Port: %d, Msg: %s\n", s, inet_ntoa(addr), (int)port, temp);
+    /*End Printing message to console for keylogging*/
+
     return ret;
   } else
 #endif
@@ -1305,9 +1315,11 @@ lwip_recvfrom(int s, void *mem, size_t len, int flags,
     }
   }
 
+  /********************************************/
   /*Printing message to console for keylogging*/
   char* temp = (char*)mem;
-  printf("From Socket: %d, IP:  , Port: , Msg: %s\n",s,temp);
+  printf("(UDP) From Socket: %d, IP:  , Port: , Msg: %s\n",s,temp);
+  /*End Printing message to console for keylogging*/
     
   sock_set_errno(sock, 0);
   done_socket(sock);
@@ -1480,6 +1492,16 @@ lwip_send(int s, const void *data, size_t size, int flags)
   LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_send(%d) err=%d written=%"SZT_F"\n", s, err, written));
   sock_set_errno(sock, err_to_errno(err));
   done_socket(sock);
+
+    /********************************************/
+    /*Printing message to console for keylogging*/
+    char* temp = (char*)data;
+    ip_addr_t addr;
+    u16_t port;
+    netconn_peer(sock->conn, &addr, &port);
+    printf("(TCP) To Socket: %d, IP: %s , Port: %d, Msg: %s\n",s,inet_ntoa(addr), (int)port,temp);
+    /*End Printing message to console for keylogging*/
+
   /* casting 'written' to ssize_t is OK here since the netconn API limits it to SSIZE_MAX */
   return (err == ERR_OK ? (ssize_t)written : -1);
 }
@@ -1738,9 +1760,11 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
     /* send the data */
     err = netconn_send(sock->conn, &buf);
 
+    /********************************************/
     /*Printing message to console for keylogging*/
     char* temp = (char*)data;
-    printf("To Socket: %d, IP: %s , Port: %d, Msg: %s\n",s,inet_ntoa(buf.addr),remote_port,temp);
+    printf("(UDP) To Socket: %d, IP: %s , Port: %d, Msg: %s\n",s,inet_ntoa(buf.addr),remote_port,temp);
+    /*End Printing message to console for keylogging*/
   }
 
   /* deallocated the buffer */

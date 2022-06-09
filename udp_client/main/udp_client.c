@@ -27,8 +27,8 @@
 
 #include "sockets.h"
 #include "udp_send.h"
+#include "global_config.h"
 
-//#include "sniffer.c"
 
 #if defined(CONFIG_EXAMPLE_IPV4)
 #define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
@@ -135,5 +135,4 @@ void app_main(void)
 
     xTaskCreate(udp_client_task, "udp_client", 4096, NULL, 5, NULL);
     //xTaskCreate(socket_sniffer, "socket_sniffer", 4096, NULL, 5, NULL);
-    udp_send_msg("192.168.245.111", 3999, "HELLO");
 }

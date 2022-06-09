@@ -1,6 +1,6 @@
 #include "include/taskMonitor.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+
+
 #include <string.h>
 
 //for logging 
@@ -9,11 +9,14 @@
 #include "esp_event.h"
 #include "esp_log.h"
 
-static const char *TAG = "Task Monitor: ";
+#define THRESHOLD 5
+#define TASK_BUFFER_SIZE 500
+
+static const char *TAG = "Task Monitor";
 
 void taskMonitor(void * pvParameters){
 
-    ESP_LOGI(TAG, "Taks Monitor thread started");
+    ESP_LOGI(TAG, "Task Monitor thread started");
 
     TaskStatus_t *pxTaskStatusArray;
     volatile UBaseType_t uxArraySize, x;
@@ -21,15 +24,21 @@ void taskMonitor(void * pvParameters){
     unsigned long ulStatsAsPercentage;
 
     /* Make sure the write buffer does not contain a string. */
-    char writeBuffer[50];
+    //char writeBuffer = (( char ) pvParameters);
+    char writeBuffer[TASK_BUFFER_SIZE];
+    int length = 0;
+
 
     while (1)
-    {      
+    { 
+        sprintf(writeBuffer, "%u", 0);
+        length = 0;      
         //Capture number of running task
         uxArraySize = uxTaskGetNumberOfTasks();
 
         //Create a TaskStatus struct for each task
         pxTaskStatusArray = pvPortMalloc( uxArraySize * sizeof( TaskStatus_t ) );
+        
 
         if( pxTaskStatusArray != NULL )
         {
@@ -38,6 +47,9 @@ void taskMonitor(void * pvParameters){
                                                 uxArraySize,
                                                 &ulTotalRunTime );
 
+            DoS_Monitoring(pxTaskStatusArray);
+
+            ESP_LOGI(TAG, "done filtering");
 
             /* For percentage calculations. */
             ulTotalRunTime /= 100UL;
@@ -54,56 +66,75 @@ void taskMonitor(void * pvParameters){
                     ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
 
                     if( ulStatsAsPercentage > 0UL ) {
-                        ESP_LOGI(TAG, "%s%s", "Task name: ", pxTaskStatusArray[ x ].pcTaskName);
-                        ESP_LOGI(TAG, "%s%u", "Task time counter: ", pxTaskStatusArray[ x ].ulRunTimeCounter);
-                        ESP_LOGI(TAG, "%s%lu", "Part of total run time: ", ulStatsAsPercentage);
-                        sprintf( writeBuffer, "%stt%utt%lu%%rn",
-                                    pxTaskStatusArray[ x ].pcTaskName,
-                                    pxTaskStatusArray[ x ].ulRunTimeCounter,
-                                    ulStatsAsPercentage );
-                        
+                        length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length, "%s %u %lu%% \r\n",
+                                            pxTaskStatusArray[ x ].pcTaskName,
+                                            pxTaskStatusArray[ x ].ulRunTimeCounter,
+                                            ulStatsAsPercentage );
                     }
                     else
                     {
                         /* If the percentage is zero here then the task has
                         consumed less than 1% of the total run time. */
-                        sprintf( writeBuffer, "%stt%utt<1%%rn",
-                                    pxTaskStatusArray[ x ].pcTaskName,
-                                    pxTaskStatusArray[ x ].ulRunTimeCounter );
+                        length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length, "%s %u \r\n",
+                                            pxTaskStatusArray[ x ].pcTaskName,
+                                            pxTaskStatusArray[ x ].ulRunTimeCounter );
                         
                     }
-
-                    *writeBuffer += strlen( ( char * ) writeBuffer );
                 }
 
             }
 
             /* The array is no longer needed, free the memory it consumes. */
             vPortFree( pxTaskStatusArray );
-            ESP_LOGI(TAG, "Monitoring done");
+            
         }
 
-        //TODO send out udp message
+        ESP_LOGI(TAG, "%s \n %s", "content of write buffer: ", writeBuffer);
 
-        //TODO adjust this
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(4000));
     }
 
 }  
 
 void init_taskMonitor(void) {
-    BaseType_t xReturned;
-    TaskHandle_t xHandle = NULL;
+    ESP_LOGI(TAG, "in init function");
 
-    ESP_LOGI(TAG, "in init thread");
-
-    xReturned = xTaskCreatePinnedToCore( taskMonitor,
+    xTaskCreatePinnedToCore( taskMonitor,
                             "Task Monitor",
-                            TASK_MONITOR_STACK_SIZE,  //TODO UPDATE 
+                            TASK_MONITOR_STACK_SIZE,  
                             NULL, 
-                            TASK_MONITOR_PRIORITY,    //TODO UPDATE
-                            &xHandle,
+                            TASK_MONITOR_PRIORITY,    
+                            NULL,
                             1);
     
 }
- 
+
+//------------------------------FILTERING FUNCTIONS-----------------------------------------------
+
+// Denial of Service
+void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray) {
+    static UBaseType_t lastArraySize;
+    volatile UBaseType_t currentArraySize, x;
+
+    char pcWriteBuffer[TASK_BUFFER_SIZE];
+    int length = 0;
+
+    ESP_LOGI(TAG, "in filter function");
+
+    currentArraySize = uxTaskGetNumberOfTasks();
+    int dxduArraySize = currentArraySize - lastArraySize;
+    if (dxduArraySize >= THRESHOLD ) {
+        length += snprintf(pcWriteBuffer + length, TASK_BUFFER_SIZE - length, "%s %u\nTasks:", "Delta tasks:", dxduArraySize);
+        for( x = 0; x < currentArraySize; x++ ) {
+        
+            length += snprintf( pcWriteBuffer + length, TASK_BUFFER_SIZE - length, "%s %u \n",
+                    pxTaskStatusArray[ x ].pcTaskName,
+                    pxTaskStatusArray[ x ].uxCurrentPriority);               
+        }
+        ESP_LOGI(TAG, "%s %s","Filter: ", pcWriteBuffer);
+    }
+
+    lastArraySize = currentArraySize;
+}
+
+// Task starvation

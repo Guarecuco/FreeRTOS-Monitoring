@@ -9,6 +9,8 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "udp_send.h"
+#include "global_config.h"
 
 #define THRESHOLD 5
 #define TASK_BUFFER_SIZE 500
@@ -106,6 +108,7 @@ void taskMonitor(void * pvParameters){
         }
 
         ESP_LOGI(TAG, "\n%s\n%s", "content of write buffer: ", writeBuffer);
+        udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, writeBuffer);  //Sending data to remote server
 
     }
 }  

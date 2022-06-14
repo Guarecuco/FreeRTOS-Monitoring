@@ -17,88 +17,6 @@
 
 static const char *TAG = "Task Monitor";
 
-void taskMonitor2(void * pvParameters){
-
-    ESP_LOGI(TAG, "Task Monitor thread started");
-
-
-    TaskStatus_t *pxTaskStatusArray;
-    volatile UBaseType_t uxArraySize, x;
-    unsigned long ulTotalRunTime;
-    unsigned long ulStatsAsPercentage;
-
-    /* Make sure the write buffer does not contain a string. */
-    //char writeBuffer = (( char ) pvParameters);
-    char writeBuffer[TASK_BUFFER_SIZE];
-    int length = 0;
-
-
-    while (1)
-    { 
-        sprintf(writeBuffer, "%u", 0);
-        length = 0;      
-        //Capture number of running task
-        uxArraySize = uxTaskGetNumberOfTasks();
-
-        //Create a TaskStatus struct for each task
-        pxTaskStatusArray = pvPortMalloc( uxArraySize * sizeof( TaskStatus_t ) );
-        
-
-        if( pxTaskStatusArray != NULL )
-        {
-            /* Generate raw status information about each task. */
-            uxArraySize = uxTaskGetSystemState( pxTaskStatusArray,
-                                                uxArraySize,
-                                                &ulTotalRunTime );
-
-            DoS_Monitoring(pxTaskStatusArray);
-
-
-            /* For percentage calculations. */
-            ulTotalRunTime /= 100UL;
-
-            /* Avoid divide by zero errors. */
-            if( ulTotalRunTime > 0 )
-            {
-            /* For each populated position in the pxTaskStatusArray array,
-            format the raw data as human readable ASCII data. */
-                for( x = 0; x < uxArraySize; x++ ) {
-                    /* What percentage of the total run time has the task used?
-                    This will always be rounded down to the nearest integer.
-                    ulTotalRunTimeDiv100 has already been divided by 100. */
-                    ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
-
-                    if( ulStatsAsPercentage > 0UL ) {
-                        length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length, "%s %u %lu%%\r\n",
-                                            pxTaskStatusArray[ x ].pcTaskName,
-                                            pxTaskStatusArray[ x ].ulRunTimeCounter,
-                                            ulStatsAsPercentage );
-                    }
-                    else
-                    {
-                        /* If the percentage is zero here then the task has
-                        consumed less than 1% of the total run time. */
-                        length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length, "%s %u\r\n",
-                                            pxTaskStatusArray[ x ].pcTaskName,
-                                            pxTaskStatusArray[ x ].ulRunTimeCounter );
-                        
-                    }
-                }
-
-            }
-
-            /* The array is no longer needed, free the memory it consumes. */
-            vPortFree( pxTaskStatusArray );
-            
-        }
-
-        ESP_LOGI(TAG, "\n%s\n%s", "content of write buffer: ", writeBuffer);
-
-        vTaskDelay(pdMS_TO_TICKS(4000));
-    }
-
-}  
-
 void taskMonitor(void * pvParameters){
 
     ESP_LOGI(TAG, "Task Monitor thread started");
@@ -125,7 +43,8 @@ void taskMonitor(void * pvParameters){
         start_array_size = uxTaskGetSystemState(start_array, start_array_size, &start_run_time);
 
 
-        vTaskDelay(DELAY_TIME);
+        vTaskDelay(pdMS_TO_TICKS(4000));
+
 
         //Allocate array to store tasks states post delay
         end_array_size = uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET;
@@ -178,6 +97,8 @@ void taskMonitor(void * pvParameters){
                 created_count += 1;
             }
         }
+
+        ESP_LOGI(TAG, "\n%s %d", "number of tasks created: ", created_count);
 
         // DoS attack handling
         if (created_count > THRESHOLD) {

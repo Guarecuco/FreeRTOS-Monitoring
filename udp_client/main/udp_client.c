@@ -26,9 +26,9 @@
 #include "addr_from_stdin.h"
 
 #include "sockets.h"
-#include "taskMonitor.h"
+#include "udp_send.h"
+#include "global_config.h"
 
-//#include "sniffer.c"
 
 #if defined(CONFIG_EXAMPLcdE_IPV4)
 #define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR

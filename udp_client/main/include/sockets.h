@@ -555,6 +555,7 @@ void lwip_socket_thread_cleanup(void); /* LWIP_NETCONN_SEM_PER_THREAD==1: destro
 #define lwip_send         send
 #define lwip_sendmsg      sendmsg
 #define lwip_sendto       sendto
+#define lwip_sendto_nolog       sendto_nolog
 #define lwip_socket       socket
 #if LWIP_SOCKET_SELECT
 #define lwip_select       select
@@ -600,6 +601,8 @@ ssize_t lwip_recvmsg(int s, struct msghdr *message, int flags);
 ssize_t lwip_send(int s, const void *dataptr, size_t size, int flags);
 ssize_t lwip_sendmsg(int s, const struct msghdr *message, int flags);
 ssize_t lwip_sendto(int s, const void *dataptr, size_t size, int flags,
+    const struct sockaddr *to, socklen_t tolen);
+ssize_t lwip_sendto_nolog(int s, const void *data, size_t size, int flags,
     const struct sockaddr *to, socklen_t tolen);
 int lwip_socket(int domain, int type, int protocol);
 ssize_t lwip_write(int s, const void *dataptr, size_t size);
@@ -652,6 +655,8 @@ static inline ssize_t sendmsg(int s,const struct msghdr *message,int flags)
 { return lwip_sendmsg(s,message,flags); }
 static inline ssize_t sendto(int s,const void *dataptr,size_t size,int flags,const struct sockaddr *to,socklen_t tolen)
 { return lwip_sendto(s,dataptr,size,flags,to,tolen); }
+static inline ssize_t sendto_nolog(int s,const void *dataptr,size_t size,int flags,const struct sockaddr *to,socklen_t tolen)
+{ return lwip_sendto_nolog(s,dataptr,size,flags,to,tolen); }
 static inline int socket(int domain,int type,int protocol)
 { return lwip_socket(domain,type,protocol); }
 #ifndef ESP_HAS_SELECT
@@ -710,6 +715,8 @@ static inline int ioctl(int s,long cmd,void *argp)
 #define sendmsg(s,message,flags)                  lwip_sendmsg(s,message,flags)
 /** @ingroup socket */
 #define sendto(s,dataptr,size,flags,to,tolen)     lwip_sendto(s,dataptr,size,flags,to,tolen)
+/** @ingroup socket */
+#define sendto_nolog(s,dataptr,size,flags,to,tolen)     lwip_sendto_nolog(s,dataptr,size,flags,to,tolen)
 /** @ingroup socket */
 #define socket(domain,type,protocol)              lwip_socket(domain,type,protocol)
 #if LWIP_SOCKET_SELECT

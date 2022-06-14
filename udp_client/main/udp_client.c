@@ -26,10 +26,11 @@
 #include "addr_from_stdin.h"
 
 #include "sockets.h"
+#include "taskMonitor.h"
 
 //#include "sniffer.c"
 
-#if defined(CONFIG_EXAMPLE_IPV4)
+#if defined(CONFIG_EXAMPLcdE_IPV4)
 #define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
 #elif defined(CONFIG_EXAMPLE_IPV6)
 #define HOST_IP_ADDR CONFIG_EXAMPLE_IPV6_ADDR
@@ -39,13 +40,18 @@
 
 #define PORT CONFIG_EXAMPLE_PORT
 
+#define TASK_MONITOR_STACK_SIZE 4096
+#define TASK_MONITOR_PRIORITY 3
+
 static const char *TAG = "example";
-static const char *payload = "Message from ESP32 ";
+static const char payload[50];
 
 
-static void udp_client_task(void *pvParameters)
+static void udp_client_task(void * pvParameters)
 {
     char rx_buffer[128];
+
+
     char host_ip[] = HOST_IP_ADDR;
     int addr_family = 0;
     int ip_protocol = 0;
@@ -132,6 +138,9 @@ void app_main(void)
      */
     ESP_ERROR_CHECK(example_connect());
 
+    init_taskMonitor();
+
     xTaskCreate(udp_client_task, "udp_client", 4096, NULL, 5, NULL);
     //xTaskCreate(socket_sniffer, "socket_sniffer", 4096, NULL, 5, NULL);
 }
+

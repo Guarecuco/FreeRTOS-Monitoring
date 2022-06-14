@@ -12,6 +12,8 @@
 
 void init_taskMonitor(void);
 void taskMonitor(void * pvParameters);
+void taskMonitor2(void * pvParameters);
 void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray);
+void DoS_Monitoring2(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, int buffer_length, char *writeBuffer, int count);
 
 #endif

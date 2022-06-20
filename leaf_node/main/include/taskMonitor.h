@@ -8,11 +8,17 @@
 // configUSE_TRACE_FACILITY = 1
 
 #define TASK_MONITOR_STACK_SIZE 4096
-#define TASK_MONITOR_PRIORITY 3
+#define TASK_MONITOR_PRIORITY 4
+#define THRESHOLD 5
+
+#define TASK_BUFFER_SIZE 500
+#define DELAY_TIME 4000
+#define ARRAY_SIZE_OFFSET 5
 
 void init_taskMonitor(void);
 void taskMonitor(void * pvParameters);
-void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray);
-void DoS_Monitoring2(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, int buffer_length, char *writeBuffer, int count);
+void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, int buffer_length, char *writeBuffer, int count);
+void DoSTask(void * param);
+void DoSTest(void);
 
 #endif

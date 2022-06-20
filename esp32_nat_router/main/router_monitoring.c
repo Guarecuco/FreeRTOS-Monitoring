@@ -35,7 +35,7 @@
 static const char *TAG = "Router monitoring";
 static int connect_count_m = 0;
 ip_event_got_ip_t* ip_event;
-
+ip_event_ap_staipassigned_t* mac_event;
 static void monitoring_event_handler(void *handler_args, esp_event_base_t event, int32_t id, void* event_data)
 {
   esp_netif_dns_info_t dns;
@@ -53,7 +53,9 @@ static void monitoring_event_handler(void *handler_args, esp_event_base_t event,
     case SYSTEM_EVENT_AP_STACONNECTED:
         connect_count_m++;
         ESP_LOGI(TAG,"%d. station connected", connect_count_m);
-        ESP_LOGI(TAG,"STA MAC@: %s\n", ip4addr_ntoa(&event->event_info.sta_connected.mac));
+        wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
+        ESP_LOGI(TAG, "station "MACSTR" join, AID=%d", MAC2STR(event->mac), event->aid);
+        //ESP_LOGI(TAG,"STA MAC@: %s\n", ip4addr_ntoa(&event->event_info.sta_connected.mac));
         break;
     case SYSTEM_EVENT_AP_STADISCONNECTED:
         connect_count_m--;
@@ -75,8 +77,17 @@ void init_router_monitoring(void *arg)
 
     while(1)
     {
+        //filter_and_analyze_parameters();
         vTaskDelay( xDelay );
     }
+}
+
+void filter_and_analyze_parameters()
+{
+    //Check that the number of stations is within the expected range
+
+
+    //Check that MAC addresses are consistent and not too many recconect attempts
 }
 
 void setup_router_monitoring(void)

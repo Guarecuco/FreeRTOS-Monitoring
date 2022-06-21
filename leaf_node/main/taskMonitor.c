@@ -12,10 +12,6 @@
 #include "udp_send.h"
 #include "global_config.h"
 
-#define THRESHOLD 5
-#define TASK_BUFFER_SIZE 500
-#define DELAY_TIME 4000
-#define ARRAY_SIZE_OFFSET 5
 
 static const char *TAG = "Task Monitor";
 
@@ -45,7 +41,7 @@ void taskMonitor(void * pvParameters){
         start_array_size = uxTaskGetSystemState(start_array, start_array_size, &start_run_time);
 
 
-        vTaskDelay(pdMS_TO_TICKS(4000));
+        vTaskDelay(pdMS_TO_TICKS(12000));
 
 
         //Allocate array to store tasks states post delay
@@ -104,7 +100,7 @@ void taskMonitor(void * pvParameters){
 
         // DoS attack handling
         if (created_count > THRESHOLD) {
-            DoS_Monitoring2(end_array, end_array_size, DoSlength, DoSwriteBuffer, created_count);
+            DoS_Monitoring(end_array, end_array_size, DoSlength, DoSwriteBuffer, created_count);
         }
 
         ESP_LOGI(TAG, "\n%s\n%s", "content of write buffer: ", writeBuffer);
@@ -126,35 +122,10 @@ void init_taskMonitor(void) {
     
 }
 
-//------------------------------FILTERING FUNCTIONS-----------------------------------------------
+//--------------------------------------- FILTERING FUNCTIONS --------------------------------------------------
 
 // Denial of Service
-void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray) {
-    static UBaseType_t lastArraySize;
-    volatile UBaseType_t currentArraySize, x;
-
-    char pcWriteBuffer[TASK_BUFFER_SIZE];
-    int length = 0;
-
-    ESP_LOGI(TAG, "in filter function");
-
-    currentArraySize = uxTaskGetNumberOfTasks();
-    int dxduArraySize = currentArraySize - lastArraySize;
-    if (dxduArraySize >= THRESHOLD ) {
-        length += snprintf(pcWriteBuffer + length, TASK_BUFFER_SIZE - length, "%s %u\nTasks:", "Delta tasks:", dxduArraySize);
-        for( x = 0; x < currentArraySize; x++ ) {
-        
-            length += snprintf( pcWriteBuffer + length, TASK_BUFFER_SIZE - length, "%s %u \n",
-                    pxTaskStatusArray[ x ].pcTaskName,
-                    pxTaskStatusArray[ x ].uxCurrentPriority);               
-        }
-        ESP_LOGI(TAG, "%s %s","Filter: ", pcWriteBuffer);
-    }
-
-    lastArraySize = currentArraySize;
-}
-
-void DoS_Monitoring2(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, int buffer_length, char *writeBuffer, int count) {
+void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, int buffer_length, char *writeBuffer, int count) {
     buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| DoS suspected, number of created tasks: %u\n", count);
     buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| Task name | Task base priority \n");
     for (int i = 0; i < array_size; i++) {
@@ -165,7 +136,7 @@ void DoS_Monitoring2(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, in
         }
     }
 
-    ESP_LOGI(TAG, "%s %s","Filter: ", writeBuffer);
+    ESP_LOGI("DoS detection: ", "%s", writeBuffer);
 
     //TODO send to udp
 
@@ -178,4 +149,38 @@ void starvation_Monitoring() {
     // Check that they run on core 0
     // It a task is suspended for a threshold number of periods
         // Suspect starvation, send msg on which task
+}
+
+
+//----------------------------------------- TEST FUNCTIONS -----------------------------------------------------
+
+void DoSTask(void * param) {
+    int *num1 = param;
+    int num = num1;
+
+    ESP_LOGI("Task number starting: ", "%d", num);
+
+    while(1) {
+        ESP_LOGI("Task number running: ", "%d", num);
+        vTaskDelay(pdMS_TO_TICKS(5600));
+    }
+}
+
+void DoSTest(void) {
+
+    ESP_LOGI("Starting DoS test", "%d", 1);
+
+    for(int i = 0; i < THRESHOLD +1; i++) {
+        int y = i;
+        xTaskCreatePinnedToCore(DoSTask,
+                        "DoS test",
+                        4096,  
+                        y, 
+                        3,    
+                        NULL,
+                        0);
+
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+
 }

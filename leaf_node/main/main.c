@@ -86,4 +86,7 @@ void app_main(void)
                             NULL,
                             0);
 
+    vTaskDelay(pdMS_TO_TICKS(4000));
+
+    DoSTest();
 }

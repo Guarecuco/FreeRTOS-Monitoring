@@ -28,18 +28,19 @@
 #include "lwip/sys.h"
 
 #include "cmd_decl.h"
-#include <esp_http_server.h>
 
 #include "router_monitoring.h"
+#include "sockets.h"
+#include "udp_send.h"
+#include "global_config.h"
 
 static const char *TAG = "Router monitoring";
 static int connect_count_m = 0;
 ip_event_got_ip_t* ip_event;
 ip_event_ap_staipassigned_t* mac_event;
+
 static void monitoring_event_handler(void *handler_args, esp_event_base_t event, int32_t id, void* event_data)
 {
-  esp_netif_dns_info_t dns;
-  //ESP_LOGI(TAG, "Event recieved! %d", id);
   switch(id) {
     case SYSTEM_EVENT_STA_START:
         break;
@@ -55,7 +56,6 @@ static void monitoring_event_handler(void *handler_args, esp_event_base_t event,
         ESP_LOGI(TAG,"%d. station connected", connect_count_m);
         wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
         ESP_LOGI(TAG, "station "MACSTR" join, AID=%d", MAC2STR(event->mac), event->aid);
-        //ESP_LOGI(TAG,"STA MAC@: %s\n", ip4addr_ntoa(&event->event_info.sta_connected.mac));
         break;
     case SYSTEM_EVENT_AP_STADISCONNECTED:
         connect_count_m--;
@@ -66,33 +66,43 @@ static void monitoring_event_handler(void *handler_args, esp_event_base_t event,
   }
 }
 
+void filter_network_params()
+{
+    ESP_LOGI(TAG,"Number of connected stations: %d",connect_count_m);
+
+    //Check that the number of stations is within the expected range
+    if( (connect_count_m/EXPECTED_STATIONS) < MINIMUM_STATION_THRESHOLD)
+        udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, "WARNING: Number of connected stations below minimum threshold!");  //Sending data to remote server
+    
+    if( (connect_count_m/EXPECTED_STATIONS) > MAXIMUM_STATION_THRESHOLD)
+        udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, "WARNING: Number of connected stations above maximum threshold!");  //Sending data to remote server
+
+    //Check that MAC addresses are consistent and not too many recconect attempts
+}
+
 void init_router_monitoring(void *arg)
 {
     ESP_LOGI(TAG,"Initializing esp32_nat_router monitoring...");
-    const TickType_t xDelay = 500 / portTICK_PERIOD_MS;
-    vTaskDelay( xDelay );
 
-    int ret = esp_event_handler_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, monitoring_event_handler, NULL);
-    //ESP_LOGI(TAG,"Handler registered with result %d", ret);
+    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
+    vTaskDelay( xDelay );
+    //static char writeBuffer[TASK_BUFFER_SIZE];
+    static char* writeBuffer = "Hello World";
+
+    //Register the event handler
+    esp_event_handler_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, monitoring_event_handler, NULL);
 
     while(1)
     {
-        //filter_and_analyze_parameters();
+        filter_network_params();
         vTaskDelay( xDelay );
     }
 }
 
-void filter_and_analyze_parameters()
-{
-    //Check that the number of stations is within the expected range
 
-
-    //Check that MAC addresses are consistent and not too many recconect attempts
-}
 
 void setup_router_monitoring(void)
 {
     int CSES_STATS_TASK_PRIO = 1;
     xTaskCreatePinnedToCore(init_router_monitoring, "router_monitor", 4096, NULL, CSES_STATS_TASK_PRIO, NULL, 1);
-    //udp_logging_init(TARGET_IP, TARGET_PORT, udp_logging_vprintf );
 }

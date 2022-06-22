@@ -39,6 +39,28 @@ static int connect_count_m = 0;
 ip_event_got_ip_t* ip_event;
 ip_event_ap_staipassigned_t* mac_event;
 
+int VALID_MAC_ADDRS[EXPECTED_STATIONS][6] = { //6 is MAC len in bytes
+    //{0x11, 0x00, 0x00, 0x00, 0x4c, 0x02} Juan's phone MAC addr
+    {0x11, 0x00, 0x00, 0x00, 0x4c, 0x03}
+};
+
+void validate_station_mac_addr(uint8_t* mac_addr)
+{
+    int i;
+    int j;
+    for(i = 0; i < EXPECTED_STATIONS; i = i+1){
+        for(j = 0; j < 6; j = j + 1){
+            if(mac_addr[j] != VALID_MAC_ADDRS[i][j])
+                break;
+        }
+        if(j == 6)
+            break;
+    }
+    ESP_LOGI(TAG,"Values after MAC validation: (i, j) : (%d, %d)", i, j);
+    if(i != EXPECTED_STATIONS || j != 6)
+        udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, "WARNING: Station MAC address not in list of expected values!");  //Sending data to remote server
+}
+
 static void monitoring_event_handler(void *handler_args, esp_event_base_t event, int32_t id, void* event_data)
 {
   switch(id) {
@@ -56,6 +78,7 @@ static void monitoring_event_handler(void *handler_args, esp_event_base_t event,
         ESP_LOGI(TAG,"%d. station connected", connect_count_m);
         wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
         ESP_LOGI(TAG, "station "MACSTR" join, AID=%d", MAC2STR(event->mac), event->aid);
+        validate_station_mac_addr(event->mac);
         break;
     case SYSTEM_EVENT_AP_STADISCONNECTED:
         connect_count_m--;
@@ -77,8 +100,8 @@ void filter_network_params()
     if( (connect_count_m/EXPECTED_STATIONS) > MAXIMUM_STATION_THRESHOLD)
         udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, "WARNING: Number of connected stations above maximum threshold!");  //Sending data to remote server
 
-    //Check that MAC addresses are consistent and not too many recconect attempts
 }
+
 
 void init_router_monitoring(void *arg)
 {
@@ -86,8 +109,6 @@ void init_router_monitoring(void *arg)
 
     const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
     vTaskDelay( xDelay );
-    //static char writeBuffer[TASK_BUFFER_SIZE];
-    static char* writeBuffer = "Hello World";
 
     //Register the event handler
     esp_event_handler_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, monitoring_event_handler, NULL);

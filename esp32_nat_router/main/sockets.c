@@ -41,9 +41,9 @@
 
 #if LWIP_SOCKET /* don't build if not configured for use in lwipopts.h */
 
-#include "sockets.h"
-#include "udp_send.h"
-#include "global_config.h"
+#include "includes/sockets.h"
+#include "includes/udp_send.h"
+#include "includes/global_config.h"
 #include "lwip/priv/sockets_priv.h"
 #include "lwip/api.h"
 #include "lwip/sys.h"

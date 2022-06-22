@@ -5,9 +5,9 @@
 #include "freertos/semphr.h"
 #include "esp_err.h"
 
-#include "esp32_nat_router.h"
-#include "router_monitoring.h"
-#include "udp_send.h"
+#include "includes/esp32_nat_router.h"
+#include "includes/router_monitoring.h"
+#include "includes/udp_send.h"
 
 void app_main(void)
 {

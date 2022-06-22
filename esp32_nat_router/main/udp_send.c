@@ -6,8 +6,8 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-#include "sockets.h"
-#include "udp_send.h"
+#include "includes/sockets.h"
+#include "includes/udp_send.h"
 
 #include <string.h>
 #include <sys/param.h>

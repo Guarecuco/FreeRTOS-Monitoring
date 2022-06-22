@@ -27,12 +27,12 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#include "cmd_decl.h"
+#include "includes/cmd_decl.h"
 
-#include "router_monitoring.h"
-#include "sockets.h"
-#include "udp_send.h"
-#include "global_config.h"
+#include "includes/router_monitoring.h"
+#include "includes/sockets.h"
+#include "includes/udp_send.h"
+#include "includes/global_config.h"
 
 static const char *TAG = "Router monitoring";
 static int connect_count_m = 0;

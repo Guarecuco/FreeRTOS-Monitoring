@@ -8,10 +8,10 @@
 #include "protocol_examples_common.h"
 #include "esp_log.h"
 
-#include "sockets.h"
-#include "taskMonitor.h"
-#include "udp_send.h"
-#include "global_config.h"
+#include "includes/sockets.h"
+#include "includes/taskMonitor.h"
+#include "includes/udp_send.h"
+#include "includes/global_config.h"
 
 #define HOST_IP_ADDR "192.168.1.1"
 #define PORT         35500

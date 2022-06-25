@@ -34,10 +34,11 @@
 #include "includes/udp_send.h"
 #include "includes/global_config.h"
 
-static const char *TAG = "Router monitoring";
+static const char *TAG = "(ROUTER_MONITORING)";
 static int connect_count_m = 0;
 ip_event_got_ip_t* ip_event;
 ip_event_ap_staipassigned_t* mac_event;
+char msg_data[256];
 
 int VALID_MAC_ADDRS[EXPECTED_STATIONS][6] = { //6 is MAC len in bytes
     //{0x11, 0x00, 0x00, 0x00, 0x4c, 0x02} Juan's phone MAC addr
@@ -56,9 +57,27 @@ void validate_station_mac_addr(uint8_t* mac_addr)
         if(j == 6)
             break;
     }
-    ESP_LOGI(TAG,"Values after MAC validation: (i, j) : (%d, %d)", i, j);
-    if(i != EXPECTED_STATIONS || j != 6)
-        udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, "WARNING: Station MAC address not in list of expected values!");  //Sending data to remote server
+    if(i != EXPECTED_STATIONS || j != 6){
+        sprintf(msg_data, "%s: WARNING: Station MAC address not in list of expected values! ("MACSTR")",TAG, MAC2STR(mac_addr));
+        udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, msg_data);  //Sending data to remote server
+    }
+}
+
+void filter_network_params()
+{
+    ESP_LOGI(TAG,"Number of connected stations: %d",connect_count_m);
+    //Check that the number of stations is within the expected range
+    if( connect_count_m < MINIMUM_STATION_THRESHOLD){
+        sprintf(msg_data, "%s: WARNING: Number of connected stations below minimum threshold! Connected = %d, Minimum expected = %d",TAG, connect_count_m, MINIMUM_STATION_THRESHOLD);
+        udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, msg_data);
+    }
+    
+    if( connect_count_m > MAXIMUM_STATION_THRESHOLD){
+        sprintf(msg_data, "%s: WARNING: Number of connected stations above maximum threshold! Connected = %d, Maximum expected = %d",TAG, connect_count_m, MAXIMUM_STATION_THRESHOLD);
+        udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, msg_data);  //Sending data to remote server
+    }
+        
+
 }
 
 static void monitoring_event_handler(void *handler_args, esp_event_base_t event, int32_t id, void* event_data)
@@ -73,34 +92,25 @@ static void monitoring_event_handler(void *handler_args, esp_event_base_t event,
     case SYSTEM_EVENT_STA_DISCONNECTED:
         ESP_LOGI(TAG,"disconnected - retry to connect to the AP");
         break;
-    case SYSTEM_EVENT_AP_STACONNECTED:
+    case WIFI_EVENT_AP_STACONNECTED:
         connect_count_m++;
         ESP_LOGI(TAG,"%d. station connected", connect_count_m);
         wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
         ESP_LOGI(TAG, "station "MACSTR" join, AID=%d", MAC2STR(event->mac), event->aid);
         validate_station_mac_addr(event->mac);
+        filter_network_params();
         break;
-    case SYSTEM_EVENT_AP_STADISCONNECTED:
+    case WIFI_EVENT_AP_STADISCONNECTED:
         connect_count_m--;
         ESP_LOGI(TAG,"station disconnected - %d remain", connect_count_m);
+        filter_network_params();
         break;
     default:
         break;
   }
 }
 
-void filter_network_params()
-{
-    ESP_LOGI(TAG,"Number of connected stations: %d",connect_count_m);
 
-    //Check that the number of stations is within the expected range
-    if( (connect_count_m/EXPECTED_STATIONS) < MINIMUM_STATION_THRESHOLD)
-        udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, "WARNING: Number of connected stations below minimum threshold!");  //Sending data to remote server
-    
-    if( (connect_count_m/EXPECTED_STATIONS) > MAXIMUM_STATION_THRESHOLD)
-        udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, "WARNING: Number of connected stations above maximum threshold!");  //Sending data to remote server
-
-}
 
 
 void init_router_monitoring(void *arg)
@@ -115,7 +125,6 @@ void init_router_monitoring(void *arg)
 
     while(1)
     {
-        filter_network_params();
         vTaskDelay( xDelay );
     }
 }
@@ -125,5 +134,5 @@ void init_router_monitoring(void *arg)
 void setup_router_monitoring(void)
 {
     int CSES_STATS_TASK_PRIO = 1;
-    xTaskCreatePinnedToCore(init_router_monitoring, "router_monitor", 4096, NULL, CSES_STATS_TASK_PRIO, NULL, 1);
+    xTaskCreatePinnedToCore(init_router_monitoring, "router_monitor", 8192, NULL, CSES_STATS_TASK_PRIO, NULL, 1);
 }

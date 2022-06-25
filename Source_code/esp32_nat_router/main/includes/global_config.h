@@ -6,7 +6,7 @@
 //#define WIFI_PASSWORD "daniel123456"
 
 /*UDP Log Server constants*/
-#define UDP_SERVER_IP "192.168.43.150"
+#define UDP_SERVER_IP "192.168.4.2"
 #define UDP_SERVER_PORT 3999
 
 #define TASK_BUFFER_SIZE 500

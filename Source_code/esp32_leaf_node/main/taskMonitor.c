@@ -139,7 +139,7 @@ void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, int
     ESP_LOGI("DoS detection: ", "%s", writeBuffer);
 
     //TODO send to udp
-
+    
 }
 
 // Task starvation

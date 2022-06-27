@@ -1,2 +1,2 @@
-idf_component_register(SRCS "main.c" "udp_send.c" "taskMonitor.c" "sockets.c" 
+idf_component_register(SRCS "taskMonitor.c" "main.c" "udp_send.c" "sockets.c" 
                     INCLUDE_DIRS "includes")

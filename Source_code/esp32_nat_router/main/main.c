@@ -8,14 +8,16 @@
 #include "includes/esp32_nat_router.h"
 #include "includes/router_monitoring.h"
 #include "includes/udp_send.h"
+#include "includes/taskMonitor.h"
 
 void app_main(void)
 {
-    //Starting monitoring thread on Core 1
+    // Starting monitoring thread on Core 1
     setup_router_monitoring();
 
-    //Starting router
+    // Starting router
     init_nat_router();
 
-    
+    // Starting task monitor
+    init_taskMonitor()
 }

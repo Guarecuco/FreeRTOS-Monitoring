@@ -16,7 +16,8 @@
 #define ARRAY_SIZE_OFFSET 5
 
 void init_taskMonitor(void);
-void taskMonitor(void * pvParameters);
+void taskMonitor_filtering(void * pvParameters);
+void taskMonitor_rawData(void * pvParameters);
 void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, int buffer_length, char *writeBuffer, int count);
 void DoSTask(void * param);
 void DoSTest(void);

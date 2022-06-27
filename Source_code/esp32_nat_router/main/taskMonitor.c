@@ -179,8 +179,8 @@ void init_taskMonitor(void) {
 
 // Denial of Service
 void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, int buffer_length, char *writeBuffer, int count) {
-    buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"(TASK MONITOR): DoS suspected, number of created tasks: %u\n", count);
-    buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"Maximum number of task expected for period: %u\n", THRESHOLD);
+    buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| DoS suspected, number of created tasks: %u\n", count);
+    buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| Maximum number of task expected for period: %u\n", THRESHOLD);
     buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| Task name | Task base priority \n");
     for (int i = 0; i < array_size; i++) {
         if (pxTaskStatusArray[i].xHandle != NULL) {

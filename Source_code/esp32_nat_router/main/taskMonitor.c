@@ -81,9 +81,7 @@ void taskMonitor_filtering(void * pvParameters){
 void taskMonitor_rawData(void * pvParameters){
 
     static char writeBuffer[TASK_BUFFER_SIZE];
-    static char DoSwriteBuffer[TASK_BUFFER_SIZE];
     static int length = 0;
-    static int DoSlength = 0;
 
 
     TaskStatus_t *start_array = NULL, *end_array = NULL;
@@ -117,7 +115,7 @@ void taskMonitor_rawData(void * pvParameters){
         //Calculate total_elapsed_time in units of run time stats clock period.
         uint32_t total_elapsed_time = (end_run_time - start_run_time);
 
-        length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length, "(%s) Task Monitoring:\n", UDP_HOST_ID);
+        length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length, "(%s) Task Monitoring:\n", UDP_SERVER_IP);
         length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length, "%s\n", "| Task | Run Time | Percentage");
         
         //Match each task in start_array to those in the end_array
@@ -151,8 +149,6 @@ void taskMonitor_rawData(void * pvParameters){
             }
         }
 
-
-        int created_count = 0;
         for (int i = 0; i < end_array_size; i++) {
             if (end_array[i].xHandle != NULL) {
                 length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length,"| %s | Created\n", end_array[i].pcTaskName);

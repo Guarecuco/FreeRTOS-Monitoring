@@ -73,7 +73,7 @@ void taskMonitor_filtering(void * pvParameters){
 
         // DoS attack handling
         if (created_count > THRESHOLD) {
-            DoS_Monitoring(end_array, end_array_size, DoSlength, DoSwriteBuffer, created_count);
+            DoS_Monitoring(end_array, end_array_size, length, writeBuffer, created_count);
             udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, writeBuffer);
         }
     }

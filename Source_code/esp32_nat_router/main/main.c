@@ -15,9 +15,13 @@ void app_main(void)
     // Starting monitoring thread on Core 1
     setup_router_monitoring();
 
-    // Starting router
-    init_nat_router();
-
     // Starting task monitor
     init_taskMonitor();
+
+    // DoS test
+    DoSTest();
+
+    // Starting router
+    init_nat_router();
+    
 }

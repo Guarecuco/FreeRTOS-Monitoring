@@ -12,6 +12,8 @@
 #include "includes/udp_send.h"
 #include "includes/global_config.h"
 
+static const char *TAG = "(TASK MONITORING)";
+
 
 void taskMonitor_filtering(void * pvParameters){
 
@@ -81,9 +83,7 @@ void taskMonitor_filtering(void * pvParameters){
 void taskMonitor_rawData(void * pvParameters){
 
     static char writeBuffer[TASK_BUFFER_SIZE];
-    static char DoSwriteBuffer[TASK_BUFFER_SIZE];
     static int length = 0;
-    static int DoSlength = 0;
 
 
     TaskStatus_t *start_array = NULL, *end_array = NULL;
@@ -151,8 +151,6 @@ void taskMonitor_rawData(void * pvParameters){
             }
         }
 
-
-        int created_count = 0;
         for (int i = 0; i < end_array_size; i++) {
             if (end_array[i].xHandle != NULL) {
                 length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length,"| %s | Created\n", end_array[i].pcTaskName);
@@ -172,6 +170,8 @@ void init_taskMonitor(void) {
                             TASK_MONITOR_PRIORITY,    
                             NULL,
                             1);
+
+    ESP_LOGI(TAG, "Task monitor started");
     
 }
 
@@ -179,9 +179,12 @@ void init_taskMonitor(void) {
 
 // Denial of Service
 void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, int buffer_length, char *writeBuffer, int count) {
-    buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"(TASK MONITOR): DoS suspected, number of created tasks: %u\n", count);
-    buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"Maximum number of task expected for period: %u\n", THRESHOLD);
+    buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| DoS suspected, number of created tasks: %u\n", count);
+    buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| Maximum number of task expected for period: %u\n", THRESHOLD);
     buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| Task name | Task base priority \n");
+    
+    ESP_LOGI(TAG,"DoS suspected, number of created tasks: %d, threshold: %d", count, THRESHOLD);
+    
     for (int i = 0; i < array_size; i++) {
         if (pxTaskStatusArray[i].xHandle != NULL) {
             buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| %s | %u \n", 
@@ -206,6 +209,7 @@ void DoSTask(void * param) {
 
 void DoSTest(void) {
 
+    ESP_LOGI(TAG,"DoS test initiated.");
 
     for(int i = 0; i < THRESHOLD +1; i++) {
         int y = i;

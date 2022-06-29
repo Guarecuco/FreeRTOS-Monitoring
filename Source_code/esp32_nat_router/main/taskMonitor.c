@@ -12,6 +12,8 @@
 #include "includes/udp_send.h"
 #include "includes/global_config.h"
 
+static const char *TAG = "(TASK MONITORING)";
+
 
 void taskMonitor_filtering(void * pvParameters){
 
@@ -168,6 +170,8 @@ void init_taskMonitor(void) {
                             TASK_MONITOR_PRIORITY,    
                             NULL,
                             1);
+
+    ESP_LOGI(TAG, "Task monitor started");
     
 }
 
@@ -178,6 +182,9 @@ void DoS_Monitoring(TaskStatus_t *pxTaskStatusArray, UBaseType_t array_size, int
     buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| DoS suspected, number of created tasks: %u\n", count);
     buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| Maximum number of task expected for period: %u\n", THRESHOLD);
     buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| Task name | Task base priority \n");
+    
+    ESP_LOGI(TAG,"DoS suspected, number of created tasks: %d, threshold: %d", count, THRESHOLD);
+    
     for (int i = 0; i < array_size; i++) {
         if (pxTaskStatusArray[i].xHandle != NULL) {
             buffer_length += snprintf( writeBuffer + buffer_length, TASK_BUFFER_SIZE - buffer_length,"| %s | %u \n", 
@@ -202,6 +209,7 @@ void DoSTask(void * param) {
 
 void DoSTest(void) {
 
+    ESP_LOGI(TAG,"DoS test initiated.");
 
     for(int i = 0; i < THRESHOLD +1; i++) {
         int y = i;

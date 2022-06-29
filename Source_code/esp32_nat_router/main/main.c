@@ -19,5 +19,5 @@ void app_main(void)
     init_nat_router();
 
     // Starting task monitor
-    init_taskMonitor()
+    init_taskMonitor();
 }

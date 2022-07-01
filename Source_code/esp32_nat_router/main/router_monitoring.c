@@ -42,7 +42,7 @@ char msg_data[256];
 
 int VALID_MAC_ADDRS[EXPECTED_STATIONS][6] = { //6 is MAC len in bytes
     //{0x11, 0x00, 0x00, 0x00, 0x4c, 0x02} Juan's phone MAC addr
-    {0x11, 0x00, 0x00, 0x00, 0x4c, 0x03}
+    {0x11, 0x00, 0x00, 0x00, 0x4c, 0x03} //Insert your whitelist MAC addresses here
 };
 
 void validate_station_mac_addr(uint8_t* mac_addr)
@@ -134,5 +134,7 @@ void init_router_monitoring(void *arg)
 void setup_router_monitoring(void)
 {
     int CSES_STATS_TASK_PRIO = 1;
-    xTaskCreatePinnedToCore(init_router_monitoring, "router_monitor", 8192, NULL, CSES_STATS_TASK_PRIO, NULL, 1);
+
+    
+    xTaskCreatePinnedToCore(init_router_monitoring, "router_monitor", 8192, NULL, 1, NULL, 1);
 }

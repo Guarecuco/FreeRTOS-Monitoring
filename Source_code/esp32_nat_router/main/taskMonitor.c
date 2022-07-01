@@ -73,7 +73,7 @@ void taskMonitor_filtering(void * pvParameters){
 
         // DoS attack handling
         if (created_count > THRESHOLD) {
-            DoS_Monitoring(end_array, end_array_size, length, writeBuffer, created_count);
+            DoS_Monitoring(end_array, end_array_size, DoSlength, DoSwriteBuffer, created_count);
             udp_send_msg(UDP_SERVER_IP, UDP_SERVER_PORT, writeBuffer);
         }
     }
@@ -117,7 +117,7 @@ void taskMonitor_rawData(void * pvParameters){
         //Calculate total_elapsed_time in units of run time stats clock period.
         uint32_t total_elapsed_time = (end_run_time - start_run_time);
 
-        length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length, "(%s) Task Monitoring:\n", UDP_HOST_ID);
+        length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length, "(%s) Task Monitoring:\n", UDP_SERVER_IP);
         length += snprintf( writeBuffer + length, TASK_BUFFER_SIZE - length, "%s\n", "| Task | Run Time | Percentage");
         
         //Match each task in start_array to those in the end_array

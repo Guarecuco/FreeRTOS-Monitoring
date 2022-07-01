@@ -32,9 +32,6 @@
 #include "includes/cmd_decl.h"
 #include <esp_http_server.h>
 
-#if !IP_NAPT
-#error "IP_NAPT must be defined"
-#endif
 #include "lwip/lwip_napt.h"
 
 #include "router_globals.h"

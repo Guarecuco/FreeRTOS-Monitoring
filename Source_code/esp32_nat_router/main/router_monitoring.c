@@ -76,6 +76,8 @@ void filter_network_params()
 
 }
 
+
+//Handler that is posted to the event loop and manages the wifi events
 static void monitoring_event_handler(void *handler_args, esp_event_base_t event, int32_t id, void* event_data)
 {
   switch(id) {
@@ -126,7 +128,7 @@ void init_router_monitoring(void *arg)
 }
 
 
-
+//Create the monitoring task and pin it to the Core 1
 void setup_router_monitoring(void)
 {
     int CSES_STATS_TASK_PRIO = 1;

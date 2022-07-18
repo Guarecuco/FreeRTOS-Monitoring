@@ -40,10 +40,6 @@ ip_event_got_ip_t* ip_event;
 ip_event_ap_staipassigned_t* mac_event;
 char msg_data[256];
 
-int VALID_MAC_ADDRS[EXPECTED_STATIONS][6] = { //6 is MAC len in bytes
-    //{0x11, 0x00, 0x00, 0x00, 0x4c, 0x02} Someone's phone MAC addr
-    {0x11, 0x00, 0x00, 0x00, 0x4c, 0x03} //Insert your whitelist MAC addresses here
-};
 
 void validate_station_mac_addr(uint8_t* mac_addr)
 {

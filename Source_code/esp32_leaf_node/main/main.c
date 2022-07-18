@@ -1,6 +1,4 @@
-/* Monitoring leaf node example
-
-*/
+/* Monitoring leaf node example*/
 
 #include "esp_event.h"
 #include "nvs_flash.h"
@@ -16,8 +14,7 @@
 #define HOST_IP_ADDR "192.168.1.1"
 #define PORT         35500
 
-/*Generates a random number
-*/
+/*Generates a random number simulating a Heart rate sensor*/
 int randomHeartRate(int lower, int upper)
 {
     return (rand() % (upper - lower + 1)) + lower;

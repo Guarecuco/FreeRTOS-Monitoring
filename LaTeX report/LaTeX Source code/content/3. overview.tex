@@ -1,0 +1,52 @@
+\chapter{Implementation Overview}
+
+\label{chap:real_world_app}
+
+The previous chapters have discussed specific vulnerabilities. To set the theory into a more comprehensible setting the following chapter contains three use cases describing real life applications where IoT clusters can be used. For all of the cases a security assessment is conducted based on the previous discussed theory and a selection of possible parameters to monitor will be suggested.\\ 
+
+IoT applications handle different types of data and have different functionalities. Consequently the data we want to protect differ from one case to another. Therefore it is natural to assume that keyloggers implemented in would have to monitor parameters related to the data we want to protect, or parameters that could indicate that an attacker is trying to exploit a known vulnerability. \\
+
+As previously visited the topology and communication protocol could lead to specific vulnerabilities. The way a user interacts with a device also changes how monitoring and logging should be done effectively. A lot of IoT devices are built on a deterministic design principle and will therefore not have any form of user interaction, like sensors. Some will have limited interaction possibilities like buttons to power on, choose functionality and connect to network, such as household applications. More advanced devices could have a graphical user interface, but these devices are not as relevant for this project as they would use a more powerful OS than the FreeRTOS.\\
+
+Logging user activity could be in the sense of logging the internal processes of the specific device, or it could log the behaviour of other nodes in the network. A combination of both is also possible. Moving on with the assumption that the FreeRTOS will be running on devices with limited or no user interaction, one can draw some conclusions about monitoring. \\
+
+For a deterministic device with no user interaction, monitoring internal processes might just be a waste of resources. Monitoring communication in towards the device, attempts on connection and tampering with real world parameters like power supply would be more meaningful. If the device on the other hand has some extent of user interaction like buttons or a terminal it would be relevant to log user activity like interrupts from button presses. If the device has communication ports these should also be monitored.\\
+
+\section{Health Monitoring} \label{chapter:use_case_1}
+When entering the healthcare sector a lot of sensitive data regarding patients needs to be handled. If an outsider gains access to personal health data it could potentially be critical for the patients safety. This specific use case concerns the use of monitoring bracelets on residents in an elderly home. Each resident has their own bracelet monitoring biological parameters such as temperature, heartbeat or insulin levels if the patient has diabetes. 
+
+Each device is connected to a WiFi network. Caretakers have their own devices (gateways) with the capability of receiving data from patient bracelets, which also send the data to an external server to be processed. This particular cluster would be exposed to vulnerabilities of the WiFi protocol, the network topology and general network attacks, as well as attacks on the device's hardware.\\
+
+One surface of attacks can be against the physical devices themselves, in this particular use case, it could lead to the biological parameters of an elderly person not being monitored, with the corresponding danger this entrails. We have identified several possible attacks, the first would be a Denial of Sleep attack caused by, for example, constant data requests by a malicious gateway, preventing the IoT device from entering "sleep" mode in order to save battery. To detect this kind of attack, the device can monitor the amount of data petitions it is receiving, the time it has spent in "idle" mode as well as its remaining battery life. \\ 
+
+Denial of service is a similar attack against the device's hardware, which can compromise its correct functioning by overloading the device's CPU or memory, this can be countered by monitoring the overall CPU/memory usage. Starving the tasks which monitor the patient's vital signs of resources through some attack on the monitoring bracelet's OS could also be a possibility.\\
+
+Side Channel attack like those covered in this course could be taken into consideration, as they would allow the user to manipulate many of the device's parameters through the extraction of, for example, administrator credentials. This would involve the attackers measuring the device's response against different inputs, allowing them to extract confidential information. Detection of side channel attacks require extra equipment.\\
+
+For this specific use case the nodes of the network are mobile, which means the likelihood is high of a node moving into an other part of the network topology or disconnect for shorter time periods. A way of intelligently monitor if a node has been tampered with while disconnected is to check if the network traffic coming from a recently disconnected node has changed, which could indicate it has been subverted. Keeping a whitelist would also be a good tool for this purpose.\\
+
+When the monitoring tasks encounters unexpected values in any of the parameters that are monitored, it will raise an alarm to be broadcasted to the gateway.
+
+
+\section{Oil Platform Control Systems}
+
+Oil rigs are highly safety critical installations. If attacked and shut down the environment around can suffer great consequences. To operate a rig several different WSNs are used both separately and collectively. Therefore a suitable network topology could be a part mesh topology where the sensor units themselves only transmits to dedicated relay nodes. The Zigbee protocol has an operating range of 10 - 100 meters which is realistic for the proportions of an oil rig. The network would also be extended end-to-end by the mesh topology. \\
+
+Both offshore and onshore rigs could be victims of node tampering and internal network attacks. According to Siemens Energy\cite{cyber-attacks_oil} attackers are no longer satisfied by injecting malware into the IT systems, but are starting to attack the OT systems of the business. If the control systems of an oil platform is attacked it could lead to failures like overheating, leakages or inability to detect broken parts or systems. \\
+
+From the previous reasoning types of attack that disable or surrenders critical systems in favour of the attacker seems the most relevant. This could be the addition of malicious nodes or node subversion, like mentioned in Chapter \ref{chap:node_tampering}. This could be detected using a keylogger monitoring the addition of unknown nodes or reappearance of seemingly disconnected nodes. In this use case all such events could be reported as the changes of sensors or other control devices is likely to be well planned and scheduled by trained operators. In addition such systems have strict requirements about connectivity and are required to be online at all times. That would make it easy to filter out any false positives.\\
+
+A WSN like this could be composed of different types of devices as discussed in the introduction of this chapter. Central nodes responsible for network administration and relaying are more likely to have user interaction so monitoring both interrupt handling and user inputs could detect if someone is trying to launch an attack from the node. Node administration on a socket level is also relevant if node subversion is conducted or false nodes are added to the network.\\
+
+If a node has been breached there is a possibility that the attacker will try to launch a DoS attack to disable central nodes in the network. In that case parameters like frequency of sockets opened and high-priority tasks launched should be monitored like discussed in Chapter \ref{chap:freertos_monitor}. 
+
+\section{Security Cameras}
+
+Surveillance cameras are tools used for obtaining safety, but when compromized create vulnerabilities. Surveillance cameras are as described in Chapter \ref{sec:wifi} often stationary and connected to the Wi-Fi. In a realistic use case the cameras would be stationed around a building and transfer data to a hub or server. This makes the star topology a suitable choice for this application.\\
+
+In this use case we have the same situation as the last where nodes rarely are added or replaced. In addition all cameras should only be connected to the master device, all other attempts of connection would be an abnormality unless the whole system is being reconfigured. On the other hand security cameras are more likely to be connected to a commercially internet service provider which might not deliver the same reliability as for industrial purposes. Thus drawing the conclusion that nodes going offline and then reappearing may not be a sign of an ongoing attack. However, a disconnection and then reappearance of an unknown could be a sign that something is not as it should be.\\ 
+
+For a device with the purpose of monitoring, like a security camera, an attacker could be interested in tapping into the stream of information rater than damage the device. That makes attacks like eavesdropping, traffic analysis and MitM relevant. However, these types of attack are rather hard to monitor and detect. For a MitM attack a possibility is to monitor the transmission power of a signal and the RTT of communication. \\
+
+In terms of possibilities of logging operating system variables the attacks monitoring network traffic is rather hard, but monitoring open sockets with belonging IP-addresses and cross-check it against an inventory list could be a good choice.  
+

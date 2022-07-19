@@ -1,0 +1,40 @@
+\chapter{FreeRTOS monitoring} \label{chap:freertos}
+
+This project regards IoT clusters where the devices are running the FreeRTOS operating system. This chapter looks closer into the OS itself and how different attacks can be detected in terms of behavioural changes in the system. \\ 
+
+\section{FreeRTOS}
+
+The FreeRTOS is a open source real-time OS created for microcontrollers and small microprocessors \cite{manual:freeRTOS}. It is well suited for systems with both soft and hard real-time requirements. Using the kernel allows the programmer to leave timing to the OS, as well as modularity, easier maintainability and several other benefits.Soft real-time requirements are tasks that have deadlines that we would want to keep, but it is not necessary. Hard requirements have deadlines that must be respected for the system to function properly with respect to the specifications.\\
+
+The OS implements a real-time kernel in the shape of a scheduler in order to allow different processes to run independently. The scheduler can also exploit several cores to run concurrent processes. In the FreeRTOS a process is called a thread, but it will be reffered to as a process or a task. To be able to schedule the different threads of the system to the right time the OS use priorities. It is pre-emptive meaning running processes can be interrupted and suspended to allow a process with higher priority to run.\\
+
+Processes can communicate using semaphores, both binary and counting, queues, mutexes and events. The OS is built up by a library of source and header files. There are two distributions of the OS - one providing the bare minimum of functionality and one supporting amongst other several communication protocols. For this project the basic version of the FreeRTOS was examined and is therefore the one referred to here. To build the kernel different source files need to be configured but the standard project requires files
+
+\begin{itemize}
+    \item tasks.c
+    \item list.c
+    \item queue.c
+    \item timers.c
+    \item event\_groups.c
+    \item croutine.c - only if event groups are used
+\end{itemize}
+ 
+The priorities are configured such that a low numerical value corresponds to a low priority task, with zero being the lowest possible priority.
+
+\section{Monitoring to detect attacks} \label{chap:freertos_monitor}
+
+For a keylogger to be effective it must provide the recipient with useful information. This means that the goal must be to monitor both extraordinary events that is not in the normal behavioural pattern of the application and changes in normal behaviour. 
+
+An important remark is that to be able to provide such useful information knowledge of the specific system and its user patterns is needed. Below some parameters that could be useful to monitor is presented. Nevertheless simply logging all events might not prove useful but will often be connected with a certain threshold or pattern. This is further explained and examplified in Chapter \ref{chap:real_world_app}. This also mean that parameters monitored also will be closely connected to the choice of microcontroller running the OS. 
+
+
+\subsubsection{Change in memory usage}
+If the rate of memory accesses changes drastically over a specified interval this can be a sign that an attacker tries to fill the devices memory. This could be connected to certain areas in memory storing critical data. The attack signature could match a buffer overflow attack, where the attacker purposely write excessive data to a buffer to gain access to the program memory of the device \cite{buffer_overflow}. This type of attack would be closely connected to the hardware and the hardware abstraction layer of the software rather than the OS itself. 
+
+\subsubsection{Scheduling}
+A way of launching a DoS attack on an operating system level could be to request the device to launch a series of high-priority tasks resulting in the system starving lower-priority task even if they are necessary to perform. It could also be as simple as launching too many tasks at once. This could be monitored by logging the number of current existing tasks and the priority of the respective tasks. An alternative to the starvation case could also be to measure the time passed after violating a hard real-time task requirement. 
+
+\subsection{Communication}
+If a node in the network is attacked a potential next step for the attacker could be to try disable central nodes by launching a another type of DoS attack where the attacker request connection or other sorts of data. In that case we could monitor the frequency of sockets opened in the node and if we suspect an attack within the node itself one could also note the frequency of tasks filling the socket for sending.
+
+For rigid IoT clusters the number of nodes are rarely changed and most devices are online for the most of the time. For these cases monitoring the number of open ports and their belonging IP addresses could help detect node subversion and addition of false nodes. 

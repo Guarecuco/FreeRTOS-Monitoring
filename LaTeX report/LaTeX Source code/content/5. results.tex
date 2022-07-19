@@ -1,0 +1,25 @@
+\chapter{Results}
+The initial research showed that the variety of attacks that can be launched towards IoT clusters are very diverse and depending on a variety of factors such as communication protocol, topology and system specifications. 
+
+These attacks can be detected in different ways. The background knowledge about the different attacks was used to discover which parameters that are useful when monitoring the FreeRTOS system. 
+
+To monitor DoS attacks the change rate of task creation is useful as well as the priority of the tasks created. The network traffic is also monitored in relation to DoS as well as the size of network packets to see if an attacker is trying to overfill the receiving nodes buffer. To monitor false or subverted nodes the connections with belonging MAC addresses are logged. 
+
+The implementation includes three different monitoring functions. For the leaf nodes the network traffic and tasks are monitored. The same goes for the central nodes of the network, but in addition these nodes monitor connections to the network. The implementation of these three features was successful. 
+
+\section{Known Issues}
+Some issues present in the project are the difficulty of modifying certain parameters, for example the monitoring server destination IP address, making it hard for the user to alter the default behaviour of the system, as they need to change the code, compile and build it and flash into the ESP32 development boards.\\
+
+The alert messages from the monitoring server could provide information in a more visually appealing way to the user.
+
+
+\section{Future Work}
+Some further work could be dedicated to eliminating duplicated dependencies and other resources, which take up space in the limited ESP32 memory, as well as induce mistakes.
+
+For future development other parameters could be monitored or existing notifications can be altered to represent information in a more useful way. 
+
+Possible parameters to monitor could be:
+\begin{itemize}
+    \item Memory allocation
+    \item Overloading or emptying of thread synchronization methods
+\end{itemize}

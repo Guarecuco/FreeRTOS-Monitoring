@@ -1,0 +1,15 @@
+\chapter{Conclusions}
+
+In conclusion, this project has given insight into the IoT cybersecurity environment, the study started off looking into how network topologies and protocols affect the different IoT solutions, their vulnerabilities and the scenarios in which they should be utilized to fully capture the benefits they offer.\\
+
+A thorough study of possible cyberattacks on IoT devices has been conducted, together with the implications they would have. The goal has been to understand the security principles that help engineers address and mitigate these attacks which, if left unchecked, could cause devastating damage. During the implementation phase the possibility of achieving this goal using monitoring of the devices and network for anomalous activity has been tested.\\
+
+Several theoretical use cases have been proposed in the paper in order for the reader to understand in which real world scenarios these technologies could prove useful, in them possible cyberattacks, their associated risks and proposed monitoring solutions are explained.\\
+
+Using the FreeRTOS to implement a prototype to monitor one of these use cases proved rather cumbersome. It is quite easy if one know all the system specifications, hardware and circumstances. On the other hand trying to generalize the prototype for portability is the difficult. Mostly because the implementation of a IoT system is in general not portable across systems. This would in most cases require the monitor to be adapted to specific variables. \\
+
+The ordinary version of FreeRTOS contains the minimum required functionality, so both the node connection monitor and the networking monitor utilize additional APIs from the ESP-IDF. Only the task monitor is implemented purely using the FreeRTOS functionality. \\
+
+It is in other words possible to create a monitor using solely the FreeRTOS in order to provide intelligent information about a potential attack. However, the number of parameters that can be monitored without using external resources are limited. Because of this a monitor basing itself on the FreeRTOS core, but also uses some external resources would prove more useful. \\
+
+In conclusion, this project has served to develop a deep understanding of the IoT security environment, the different IoT system configuration, the possible attacks that they are exposed to, the criticality of these threats as well as a way to mitigate and detect these attacks.
